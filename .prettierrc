@@ -3,6 +3,8 @@
   "useTabs": false,
   "semi": true,
   "singleQuote": true,
-  "printwidth":60,
-  "trailingComma": "all"
+  "jsxSingleQuote": true,
+  "bracketSpacing": true,
+  "trailingComma": "all",
+  "printWidth": 60
 }
