@@ -6,39 +6,50 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import {
   API_BASE_URL,
   USER,
 } from '../../config/host-config';
+import { initialState, joinReducer } from './joinReducer';
+import { debounce } from 'lodash';
 
 const Join = () => {
-  // 상태 변수로 회원가입 입력값 관리
-  const [userValue, setUserValue] = useState({
-    userName: '',
-    password: '',
-    email: '',
-  });
+  //useReducer를 사용해서 리듀서 함수 등록, state와 dispatch를 전달받음
+  const [state, dispatch] = useReducer(
+    joinReducer,
+    initialState,
+  );
 
-  // 검증 메세지에 대한 상태변수 관리
-  // 입력값과 메세지는 따로 상태 관리(메세지는 백엔드로 보내줄 필요 없음)
-  // 메세지 영역은 각 입력창마다 존재(이름, 이메일, 비밀번호...)하기 때문에 객체 형태로 한 번에 관리.
-  const [message, setMessage] = useState({
-    userName: '',
-    password: '',
-    passwordCheck: '',
-    email: '',
-  });
+  //상태 객체에서 각각의 상태 객체값을 분해할당
+  const { userValue, message, correct } = state;
 
-  // 검증 완료 체크에 대한 상태변수 관리
-  // 각각의 입력창마다 유효성 검증 상태를 관리해야 하기 때문에 객체로 선언.
-  // 상태를 유지하려는 이유 -> 스타일, 마지막에 회원가입 버튼 누를 때 까지 검증 상태를 유지해야 하기 때문.
-  const [correct, setCorrect] = useState({
-    userName: false,
-    password: false,
-    passwordCheck: false,
-    email: false,
-  });
+  // // 상태 변수로 회원가입 입력값 관리
+  // const [userValue, setUserValue] = useState({
+  //   userName: '',
+  //   password: '',
+  //   email: '',
+  // });
+
+  // // 검증 메세지에 대한 상태변수 관리
+  // // 입력값과 메세지는 따로 상태 관리(메세지는 백엔드로 보내줄 필요 없음)
+  // // 메세지 영역은 각 입력창마다 존재(이름, 이메일, 비밀번호...)하기 때문에 객체 형태로 한 번에 관리.
+  // const [message, setMessage] = useState({
+  //   userName: '',
+  //   password: '',
+  //   passwordCheck: '',
+  //   email: '',
+  // });
+
+  // // 검증 완료 체크에 대한 상태변수 관리
+  // // 각각의 입력창마다 유효성 검증 상태를 관리해야 하기 때문에 객체로 선언.
+  // // 상태를 유지하려는 이유 -> 스타일, 마지막에 회원가입 버튼 누를 때 까지 검증 상태를 유지해야 하기 때문.
+  // const [correct, setCorrect] = useState({
+  //   userName: false,
+  //   password: false,
+  //   passwordCheck: false,
+  //   email: false,
+  // });
 
   // 검증된 데이터를 각각의 상태변수에 저장해 주는 함수.
   const saveInputState = ({
@@ -48,46 +59,57 @@ const Join = () => {
     msg,
   }) => {
     // 입력값 세팅
-    setUserValue((oldVal) => {
-      return { ...oldVal, [key]: inputValue };
-    });
-
-    // 메세지 세팅
-    setMessage((oldMsg) => {
-      return { ...oldMsg, [key]: msg }; // key 변수의 값을 프로퍼티 키로 활용하는 중.
-    });
-
-    // 입력값 검증 상태 세팅
-    setCorrect((oldCorrect) => {
-      return { ...oldCorrect, [key]: flag };
-    });
+    // 패스워드 확인 입력값은 굳이 userValue 상태로 유지할 필요가 없기 때문에
+    // 임의의 문자열 'pass'를 넘기고 있습니다. -> pass가 넘어온다면 setUserValue()를 실행하지 않겠다.
+    // inputValue !== 'pass' &&
+    //   setUserValue((oldVal) => {
+    //     return { ...oldVal, [key]: inputValue };
+    //   });
+    // // 메세지 세팅
+    // setMessage((oldMsg) => {
+    //   return { ...oldMsg, [key]: msg }; // key 변수의 값을 프로퍼티 키로 활용하는 중.
+    // });
+    // // 입력값 검증 상태 세팅
+    // setCorrect((oldCorrect) => {
+    //   return { ...oldCorrect, [key]: flag };
+    // });
   };
 
   // 이름 입력창 체인지 이벤트 핸들러
-  const nameHandler = (e) => {
-    const nameRegex = /^[가-힣]{2,5}$/;
-    const inputValue = e.target.value;
+  const nameHandler = () => {
+    debounce((inputValue) => {
+      const nameRegex = /^[가-힣]{2,5}$/;
 
-    // 입력값 검증
-    let msg; // 검증 메세지를 저장할 변수
-    let flag = false; // 입력값 검증 여부 체크 변수
+      // 입력값 검증
+      let msg; // 검증 메세지를 저장할 변수
+      let flag = false; // 입력값 검증 여부 체크 변수
 
-    if (!inputValue) {
-      msg = '유저 이름은 필수입니다.';
-    } else if (!nameRegex.test(inputValue)) {
-      msg = '2~5글자 사이의 한글로 작성하세요!';
-    } else {
-      msg = '사용 가능한 이름입니다.';
-      flag = true;
-    }
+      if (!inputValue) {
+        msg = '유저 이름은 필수입니다.';
+      } else if (!nameRegex.test(inputValue)) {
+        msg = '2~5글자 사이의 한글로 작성하세요!';
+      } else {
+        msg = '사용 가능한 이름입니다.';
+        flag = true;
+      }
 
-    // saveInputState에게 이 핸들러에서 처리한 여러가지 값을 객체로 한번에 넘기기.
-    saveInputState({
-      key: 'userName',
-      inputValue,
-      msg,
-      flag,
-    });
+      // saveInputState에게 이 핸들러에서 처리한 여러가지 값을 객체로 한번에 넘기기.
+      dispatch({
+        type: 'SET_USER_VALUE',
+        key: 'userName',
+        value: inputValue,
+      });
+      dispatch({
+        type: 'SET_MESSAGE',
+        key: 'userName',
+        value: msg,
+      });
+      dispatch({
+        type: 'SET_CORRECT',
+        key: 'userName',
+        value: flag,
+      });
+    }, 500);
   };
 
   // 이메일 중복 체크 서버 통신 함수
@@ -141,6 +163,98 @@ const Join = () => {
       msg,
       flag,
     });
+  };
+
+  // 패스워드 입력창 체인지 이벤트 핸들러
+  const passwordHandler = (e) => {
+    // 패스워드가 변경됐다? -> 패스워드 확인란도 초기화 시킨다.
+    document.getElementById('password-check').value = '';
+
+    const inputValue = e.target.value;
+    const pwRegex =
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,20}$/;
+
+    let msg;
+    let flag = false;
+
+    if (!inputValue) {
+      msg = '비밀번호는 필수입니다.';
+    } else if (!pwRegex.test(inputValue)) {
+      msg =
+        '8글자 이상의 영문, 숫자, 특수문자를 포함해 주세요.';
+    } else {
+      msg = '사용 가능한 비밀번호 입니다.';
+      flag = true;
+    }
+
+    saveInputState({
+      key: 'password',
+      inputValue,
+      msg,
+      flag,
+    });
+  };
+
+  // 비밀번호 확인란 체인지 이벤트 핸들러
+  const pwCheckHandler = (e) => {
+    let msg;
+    let flag = false;
+    if (!e.target.value) {
+      msg = '비밀번호 확인란은 필수입니다.';
+    } else if (userValue.password !== e.target.value) {
+      msg = '비밀번호가 일치하지 않습니다.';
+    } else {
+      msg = '비밀번호가 일치합니다.';
+      flag = true;
+    }
+    saveInputState({
+      key: 'passwordCheck',
+      inputValue: 'pass',
+      msg,
+      flag,
+    });
+  };
+
+  // 4개의 입력창이 모두 검증에 통과했는지 여부를 검사
+  const isValid = () => {
+    for (let key in correct) {
+      const flag = correct[key];
+      if (!flag) return false;
+    }
+    return true;
+  };
+
+  // 회원 가입 처리 서버 요청
+  const fetchSignUpPost = () => {
+    fetch(`${API_BASE_URL}${USER}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(userValue),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        alert(
+          `${data.userName}(${data.email})님 회원가입에 성공했습니다.`,
+        );
+      })
+      .catch((err) => {
+        console.log('err: ', err);
+        alert(
+          '서버와의 통신이 원활하지 않습니다. 관리자에게 문의하세요.',
+        );
+      });
+  };
+
+  // 회원 가입 버튼 클릭 이벤트 핸들러
+  const joinButtonClickHandler = (e) => {
+    e.preventDefault();
+
+    if (isValid()) {
+      // fetch를 사용한 회원 가입 요청.
+      fetchSignUpPost();
+    } else {
+      alert('입력란을 다시 확인해 주세요!');
+    }
   };
 
   return (
@@ -209,8 +323,17 @@ const Join = () => {
               type='password'
               id='password'
               autoComplete='current-password'
+              onChange={passwordHandler}
             />
-            <span></span>
+            <span
+              style={
+                correct.password
+                  ? { color: 'green' }
+                  : { color: 'red' }
+              }
+            >
+              {message.password}
+            </span>
           </Grid>
 
           <Grid item xs={12}>
@@ -223,8 +346,18 @@ const Join = () => {
               type='password'
               id='password-check'
               autoComplete='check-password'
+              onChange={pwCheckHandler}
             />
-            <span id='check-span'></span>
+            <span
+              id='check-span'
+              style={
+                correct.passwordCheck
+                  ? { color: 'green' }
+                  : { color: 'red' }
+              }
+            >
+              {message.passwordCheck}
+            </span>
           </Grid>
 
           <Grid item xs={12}>
@@ -233,6 +366,7 @@ const Join = () => {
               fullWidth
               variant='contained'
               style={{ background: '#38d9a9' }}
+              onClick={joinButtonClickHandler}
             >
               계정 생성
             </Button>

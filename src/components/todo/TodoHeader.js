@@ -1,5 +1,5 @@
 import React from 'react';
-import '../scss/TodoHeader.scss';
+import '../../scss/TodoHeader.scss';
 
 const TodoHeader = ({ count }) => {
   const today = new Date();
@@ -7,8 +7,9 @@ const TodoHeader = ({ count }) => {
   const dateString = today.toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: 'long',
-    day: '2-digit',
+    day: 'numeric',
   });
+
   const dayName = today.toLocaleDateString('ko-KR', {
     weekday: 'long',
   });
@@ -18,7 +19,7 @@ const TodoHeader = ({ count }) => {
       <h1>{dateString}</h1>
       <div className='day'>{dayName}</div>
       <div className='tasks-left'>
-        할 일{count()}개 남음
+        할 일 {count()}개 남음
       </div>
     </header>
   );
